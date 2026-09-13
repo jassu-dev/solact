@@ -1,5 +1,10 @@
 solact.in {
-    reverse_proxy dashboard:3001
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+    handle {
+        reverse_proxy dashboard:3001
+    }
 }
 
 www.solact.in {
@@ -24,7 +29,12 @@ chat.solact.in {
 }
 
 solact.localhost {
-    reverse_proxy dashboard:3001
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+    handle {
+        reverse_proxy dashboard:3001
+    }
 }
 
 api.solact.localhost {
@@ -37,7 +47,6 @@ chatwoot.solact.localhost {
 
 :80 {
     handle /api/* {
-        rewrite * /api/v1{path}
         reverse_proxy api:8000
     }
     handle {
