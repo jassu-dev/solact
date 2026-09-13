@@ -1,5 +1,14 @@
-solact.in, www.solact.in, app.solact.in {
+solact.in, www.solact.in {
     reverse_proxy dashboard:3001
+}
+
+app.solact.in {
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+    handle {
+        reverse_proxy dashboard:3001
+    }
 }
 
 api.solact.in {

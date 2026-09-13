@@ -2,11 +2,19 @@ import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 
 function resolveApiBase(): string {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
   if (typeof window !== "undefined") {
-    if (window.location.hostname.endsWith("solact.in")) return "https://api.solact.in/api/v1";
+    // When inside app.solact.in, use relative /api/v1 so requests are same-origin through Caddy proxy
+    if (window.location.hostname === "app.solact.in") {
+      return "/api/v1";
+    }
+    if (window.location.hostname.includes("localhost")) {
+      return "/api/v1";
+    }
+    if (window.location.hostname.endsWith("solact.in")) {
+      return "https://api.solact.in/api/v1";
+    }
   }
-  return "https://api.solact.in/api/v1";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
 }
 const API_BASE = resolveApiBase();
 

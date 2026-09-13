@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Premium vibrant gradient -->
+    <linearGradient id="premiumGradient" x1="15%" y1="85%" x2="85%" y2="15%">
+      <stop offset="0%" stop-color="#1E40AF"></stop>    <!-- Deep Blue -->
+      <stop offset="35%" stop-color="#06B6D4"></stop>   <!-- Bright Teal -->
+      <stop offset="70%" stop-color="#FCA5A5"></stop>   <!-- Soft Coral -->
+      <stop offset="100%" stop-color="#F97316"></stop>  <!-- Warm Orange -->
+    </linearGradient>
+
+    <!-- Subtle drop shadow to give the stroke a premium depth -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#06B6D4" flood-opacity="0.15"></feDropShadow>
+    </filter>
+  </defs>
+
+  <!-- Clean Canvas -->
+  
+
+  <!-- Logo Group -->
+  <g transform="translate(10, 20)" filter="url(#softShadow)">
+    
+    <!-- The Head & Chat Bubble Continuous Outline -->
+    <path d="M 180,350 
+         L 130,380 
+         L 145,330 
+         C 105,295 85,245 85,185 
+         C 85,95 155,30 250,30 
+         C 335,30 390,85 390,150 
+         C 390,175 380,185 400,205 
+         C 412,217 410,225 395,235 
+         C 388,240 388,245 395,255 
+         C 400,265 390,275 375,270 
+         C 355,305 315,330 270,345 
+         C 235,355 205,355 180,350 Z" fill="none" stroke="url(#premiumGradient)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" data-index="0" style="opacity: 1;"></path>
+
+    <!-- The Elegant 'S' Core inside the head -->
+    <path d="M 300,125 
+         C 220,95 180,155 245,185 
+         C 310,215 285,295 200,270" fill="none" stroke="url(#premiumGradient)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" data-index="1"></path>
+  </g>
+</svg>

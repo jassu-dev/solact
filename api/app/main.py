@@ -33,7 +33,17 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS + ["*"],
+    allow_origins=[
+        "https://solact.in",
+        "https://www.solact.in",
+        "https://app.solact.in",
+        "https://api.solact.in",
+        "https://chat.solact.in",
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:8000",
+    ],
+    allow_origin_regex=r"https://.*\.solact\.in",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

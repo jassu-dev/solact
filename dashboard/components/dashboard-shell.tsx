@@ -37,7 +37,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         {/* Brand Header with custom icon logo */}
         <div className="h-18 border-b border-slate-200 flex items-center px-5 gap-3">
           <div className="w-9 h-9 rounded-xl overflow-hidden border border-slate-100 shadow-xs bg-white p-0.5 flex items-center justify-center shrink-0">
-            <img src="/icon.png" alt="Solact" className="w-full h-full object-contain" />
+            <img src="/icon.svg" alt="Solact" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">

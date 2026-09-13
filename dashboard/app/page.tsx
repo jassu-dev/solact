@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getUser } from "@/lib/api";
 import Link from "next/link";
 import {
   Sparkles,
@@ -90,6 +92,24 @@ const DEMO_SCENARIOS = [
 ];
 
 export default function HomePage() {
+  const router = useRouter();
+  const [isAppSubdomain, setIsAppSubdomain] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      // If user visits app.solact.in, they MUST NOT see the landing page!
+      if (host.startsWith("app.") || host.includes("app.solact")) {
+        setIsAppSubdomain(true);
+        const user = getUser();
+        if (user) {
+          router.replace("/dashboard");
+        } else {
+          router.replace("/login");
+        }
+      }
+    }
+  }, [router]);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [activeScenario, setActiveScenario] = useState(0);
   const [customInput, setCustomInput] = useState("");
@@ -230,6 +250,19 @@ export default function HomePage() {
     }, 800);
   };
 
+  if (isAppSubdomain) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-xl overflow-hidden shadow-xs bg-white p-1 flex items-center justify-center">
+            <img src="/icon.svg" alt="Solact" className="w-full h-full object-contain" />
+          </div>
+          <div className="text-sm font-medium text-slate-600">Redirecting to Solact portal...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-brand-500 selection:text-white font-sans">
       {/* 1. TOP ANNOUNCEMENT BANNER */}
@@ -256,7 +289,7 @@ export default function HomePage() {
           <Link href="/" className="flex items-center gap-3">
             <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-sm border border-slate-100 flex items-center justify-center bg-white">
               <img
-                src="/icon.png"
+                src="/icon.svg"
                 alt="Solact Logo"
                 className="w-full h-full object-contain p-0.5"
               />
@@ -462,7 +495,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <div className="w-8 h-8 rounded-lg overflow-hidden bg-white p-0.5">
-                      <img src="/icon.png" alt="Solact" className="w-full h-full object-contain" />
+                      <img src="/icon.svg" alt="Solact" className="w-full h-full object-contain" />
                     </div>
                     <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-slate-900" />
                   </div>
@@ -1153,7 +1186,7 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 bg-white p-0.5 shadow-xs">
-                <img src="/icon.png" alt="Solact Logo" className="w-full h-full object-contain" />
+                <img src="/icon.svg" alt="Solact Logo" className="w-full h-full object-contain" />
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-lg text-slate-900">Solact</span>
