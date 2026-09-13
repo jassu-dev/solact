@@ -45,7 +45,7 @@ services:
     env_file:
       - ./api/.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://solact_founder:Solact123@postgres:5432/shopify_ai
+      DATABASE_URL: postgresql+psycopg2://solact_founder:Solact123@postgres:5432/solact
       REDIS_URL: redis://redis:6379/0
       EMBEDDING_MODEL: BAAI/bge-small-en-v1.5
       EMBEDDING_DIM: "384"
@@ -84,7 +84,7 @@ services:
     env_file:
       - ./api/.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://solact_founder:Solact123@postgres:5432/shopify_ai
+      DATABASE_URL: postgresql+psycopg2://solact_founder:Solact123@postgres:5432/solact
       REDIS_URL: redis://redis:6379/0
       EMBEDDING_MODEL: BAAI/bge-small-en-v1.5
     healthcheck:

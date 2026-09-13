@@ -5,7 +5,7 @@ from typing import Optional
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    DATABASE_URL: str = "postgresql+psycopg2://solact_founder:Solact123@localhost:5432/shopify_ai"
+    DATABASE_URL: str = "postgresql+psycopg2://solact_founder:Solact123@postgres:5432/solact"
     REDIS_URL: str = "redis://localhost:6379/0"
     JWT_SECRET: str = "dev-secret-change-me-please-1234567890"
     JWT_ALGORITHM: str = "HS256"

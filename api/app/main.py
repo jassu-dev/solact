@@ -17,27 +17,46 @@ logger = logging.getLogger("solact.api")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Solact API - verifying database tables and extensions...")
+    logger.info("Starting Solact API - ensuring isolated database and tables...")
     try:
+        from sqlalchemy import create_engine, text
+        from .config import settings
+        import re
+
+        # Auto-create 'solact' database if it doesn't exist yet by connecting to postgres/shopify_ai
+        if "/solact" in settings.DATABASE_URL:
+            admin_db_url = re.sub(r"/solact(\?.*)?$", r"/shopify_ai", settings.DATABASE_URL)
+            try:
+                temp_engine = create_engine(admin_db_url, isolation_level="AUTOCOMMIT")
+                with temp_engine.connect() as conn:
+                    res = conn.execute(text("SELECT 1 FROM pg_database WHERE datname = 'solact'")).scalar()
+                    if not res:
+                        logger.info("Database 'solact' not found. Creating database 'solact'...")
+                        conn.execute(text("CREATE DATABASE solact"))
+                        logger.info("Database 'solact' created!")
+                temp_engine.dispose()
+            except Exception as e:
+                logger.warning(f"Note on checking/creating solact database: {e}")
+
+        # Connect to solact database, create extension and all Solact tables
         from .database import Base, engine, SessionLocal
         from . import models
         from .models import User, Organization
         from .security import get_password_hash
-        from sqlalchemy import text
 
         with engine.connect() as conn:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             conn.commit()
 
         Base.metadata.create_all(bind=engine)
-        logger.info("Database schema verified (Base.metadata.create_all completed).")
+        logger.info("Isolated Solact database schema verified.")
 
-        # Seed initial admin founder if no user exists
+        # Seed initial admin user if not exists
         db = SessionLocal()
         try:
             admin_user = db.query(User).filter(User.email == "admin@solact.in").first()
             if not admin_user:
-                logger.info("Seeding initial admin user: admin@solact.in / Password123!...")
+                logger.info("Seeding initial admin user: admin@solact.in...")
                 org = Organization(name="Solact Primary Store", slug="solact-primary")
                 db.add(org)
                 db.flush()
@@ -52,11 +71,11 @@ async def lifespan(app: FastAPI):
                 )
                 db.add(admin_user)
                 db.commit()
-                logger.info("Default admin user created successfully.")
+                logger.info("Default admin user created: admin@solact.in / Password123!")
         finally:
             db.close()
     except Exception as db_err:
-        logger.error(f"Database table verification error: {db_err}", exc_info=True)
+        logger.error(f"Database initialization error: {db_err}", exc_info=True)
 
     logger.info("Pre-warming embedding model in RAM...")
     try:
