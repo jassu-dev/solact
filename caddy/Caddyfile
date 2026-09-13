@@ -1,3 +1,15 @@
+solact.in, www.solact.in, app.solact.in {
+    reverse_proxy dashboard:3001
+}
+
+api.solact.in {
+    reverse_proxy api:8000
+}
+
+chat.solact.in {
+    reverse_proxy chatwoot-web:3000
+}
+
 solact.localhost {
     reverse_proxy dashboard:3001
 }

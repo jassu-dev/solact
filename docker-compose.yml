@@ -50,7 +50,7 @@ services:
       EMBEDDING_MODEL: BAAI/bge-small-en-v1.5
       EMBEDDING_DIM: "384"
       API_V1_PREFIX: /api/v1
-      CORS_ORIGINS: '["http://localhost:3000","http://localhost:3001","http://solact.localhost"]'
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:3001","http://solact.localhost","https://solact.in","https://www.solact.in","https://app.solact.in","https://chat.solact.in"]'
       CHATWOOT_URL: http://chatwoot-web:3000
       CHATWOOT_API_TOKEN: solact_ai_bot_token_123456789
       CHATWOOT_ACCOUNT_ID: "1"
@@ -139,7 +139,7 @@ services:
       REDIS_URL: redis://chatwoot-redis:6379/1
       REDIS_PASSWORD: ""
       SECRET_KEY_BASE: ${CHATWOOT_SECRET:-change-me-very-long-chatwoot-secret-key-base}
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       DEFAULT_LOCALE: en
       RAILS_SERVE_STATIC_FILES: "true"
       PORT: "3000"
@@ -179,7 +179,7 @@ services:
       REDIS_URL: redis://chatwoot-redis:6379/1
       REDIS_PASSWORD: ""
       SECRET_KEY_BASE: ${CHATWOOT_SECRET:-change-me-very-long-chatwoot-secret-key-base}
-      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       DEFAULT_LOCALE: en
       ACTIVE_STORAGE_SERVICE: local
       SAFE_FETCH_ALLOW_PRIVATE_NETWORK: "true"
