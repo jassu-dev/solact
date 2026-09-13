@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
@@ -8,6 +9,20 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+psycopg2://solact_founder:Solact123@postgres:5432/solact"
     REDIS_URL: str = "redis://localhost:6379/0"
     JWT_SECRET: str = "dev-secret-change-me-please-1234567890"
+
+    @field_validator("DATABASE_URL", mode="after")
+    @classmethod
+    def sanitize_database_url(cls, v: str) -> str:
+        if v and "/shopify_ai" in v:
+            v = v.replace("/shopify_ai", "/solact")
+        return v
+
+    @property
+    def clean_database_url(self) -> str:
+        url = self.DATABASE_URL
+        if "/shopify_ai" in url:
+            url = url.replace("/shopify_ai", "/solact")
+        return url
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 1440
 

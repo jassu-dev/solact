@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
 
         # Auto-create 'solact' database if it doesn't exist yet by connecting to postgres/shopify_ai
         if "/solact" in settings.DATABASE_URL:
-            admin_db_url = re.sub(r"/solact(\?.*)?$", r"/shopify_ai", settings.DATABASE_URL)
+            admin_db_url = re.sub(r"/solact(\?.*)?$", r"/shopify_ai\1", settings.DATABASE_URL)
             try:
                 temp_engine = create_engine(admin_db_url, isolation_level="AUTOCOMMIT")
                 with temp_engine.connect() as conn:
