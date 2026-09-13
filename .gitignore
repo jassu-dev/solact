@@ -1,0 +1,31 @@
+﻿# Environment and Secrets
+*.env
+*.env.*
+!.env.example
+api/.env
+chatwoot/.env.chatwoot
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+
+# OS and Editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary
+scratch/
+*.log

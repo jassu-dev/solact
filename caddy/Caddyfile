@@ -1,0 +1,21 @@
+solact.localhost {
+    reverse_proxy dashboard:3001
+}
+
+api.solact.localhost {
+    reverse_proxy api:8000
+}
+
+chatwoot.solact.localhost {
+    reverse_proxy chatwoot-web:3000
+}
+
+:80 {
+    handle /api/* {
+        rewrite * /api/v1{path}
+        reverse_proxy api:8000
+    }
+    handle {
+        reverse_proxy dashboard:3001
+    }
+}

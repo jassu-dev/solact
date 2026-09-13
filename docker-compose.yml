@@ -1,0 +1,214 @@
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg18-trixie
+    container_name: Solact-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: solact_founder
+      POSTGRES_PASSWORD: Solact123
+      POSTGRES_DB: shopify_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U solact_founder -d shopify_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis
+    container_name: solact-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: solact-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - ./api/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://solact_founder:Solact123@postgres:5432/shopify_ai
+      REDIS_URL: redis://redis:6379/0
+      EMBEDDING_MODEL: BAAI/bge-small-en-v1.5
+      EMBEDDING_DIM: "384"
+      API_V1_PREFIX: /api/v1
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:3001","http://solact.localhost"]'
+      CHATWOOT_URL: http://chatwoot-web:3000
+      CHATWOOT_API_TOKEN: solact_ai_bot_token_123456789
+      CHATWOOT_ACCOUNT_ID: "1"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+      - solact_hf_cache:/root/.cache/huggingface
+    command: >-
+      sh -c "
+      echo 'Running migrations...' &&
+      alembic upgrade head ||
+      (python -c 'from app.database import Base, engine; from app import models as m; from sqlalchemy import text; c = engine.connect(); c.execute(text(\"CREATE EXTENSION IF NOT EXISTS vector\")); c.commit(); c.close(); Base.metadata.create_all(bind=engine); print(\"Tables created via SQLAlchemy fallback\")') &&
+      echo 'Starting API...' &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --proxy-headers
+      "
+
+  worker:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: solact-worker
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - ./api/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://solact_founder:Solact123@postgres:5432/shopify_ai
+      REDIS_URL: redis://redis:6379/0
+      EMBEDDING_MODEL: BAAI/bge-small-en-v1.5
+    healthcheck:
+      disable: true
+    volumes:
+      - ./api:/app
+      - solact_hf_cache:/root/.cache/huggingface
+    command: sh -c "celery -A worker.celery_app worker -l info -c 2 -Q celery"
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: solact-dashboard
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api/v1}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
+    ports:
+      - "3001:3001"
+
+  chatwoot-redis:
+    image: redis
+    container_name: solact-chatwoot-redis
+    restart: unless-stopped
+    volumes:
+      - chatwoot_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  chatwoot-web:
+    image: chatwoot/chatwoot:latest
+    container_name: solact-chatwoot-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chatwoot-redis:
+        condition: service_healthy
+    env_file:
+      - ./chatwoot/.env.chatwoot
+    environment:
+      RAILS_ENV: production
+      NODE_ENV: production
+      INSTALLATION_ENV: docker
+      DATABASE_URL: postgresql://solact_founder:Solact123@postgres:5432/shopify_ai
+      REDIS_URL: redis://chatwoot-redis:6379/1
+      REDIS_PASSWORD: ""
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET:-change-me-very-long-chatwoot-secret-key-base}
+      FRONTEND_URL: http://localhost:3000
+      DEFAULT_LOCALE: en
+      RAILS_SERVE_STATIC_FILES: "true"
+      PORT: "3000"
+      ACTIVE_STORAGE_SERVICE: local
+      SAFE_FETCH_ALLOW_PRIVATE_NETWORK: "true"
+      EXTRA_HOSTS: ""
+    ports:
+      - "3000:3000"
+    volumes:
+      - chatwoot_storage:/app/storage
+    entrypoint: sh -c "
+      set -e;
+      mkdir -p tmp/pids;
+      if ! ruby -e 'require "socket"; s=TCPSocket.new("postgres",5432); s.close' 2>/dev/null; then sleep 10; fi;
+      bundle exec rails db:chatwoot_prepare || bundle exec rails db:prepare;
+      exec bundle exec puma -C config/puma.rb -b tcp://0.0.0.0:3000
+      "
+
+  chatwoot-worker:
+    image: chatwoot/chatwoot:latest
+    container_name: solact-chatwoot-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chatwoot-redis:
+        condition: service_healthy
+      chatwoot-web:
+        condition: service_started
+    env_file:
+      - ./chatwoot/.env.chatwoot
+    environment:
+      RAILS_ENV: production
+      NODE_ENV: production
+      INSTALLATION_ENV: docker
+      DATABASE_URL: postgresql://solact_founder:Solact123@postgres:5432/shopify_ai
+      REDIS_URL: redis://chatwoot-redis:6379/1
+      REDIS_PASSWORD: ""
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET:-change-me-very-long-chatwoot-secret-key-base}
+      FRONTEND_URL: http://localhost:3000
+      DEFAULT_LOCALE: en
+      ACTIVE_STORAGE_SERVICE: local
+      SAFE_FETCH_ALLOW_PRIVATE_NETWORK: "true"
+    volumes:
+      - chatwoot_storage:/app/storage
+    command: bundle exec sidekiq -C config/sidekiq.yml
+
+  caddy:
+    build:
+      context: ./caddy
+      dockerfile: Dockerfile
+    container_name: solact-caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+      - dashboard
+      - chatwoot-web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  redis_data:
+  solact_hf_cache:
+  chatwoot_redis_data:
+  chatwoot_storage:
+  caddy_data:
+  caddy_config:

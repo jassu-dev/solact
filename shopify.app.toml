@@ -1,0 +1,15 @@
+name = "solact"
+client_id = "ab5ca67b8a9f0f60f7749a97bcbfef9d"
+application_url = "https://hyperdiastolic-bethel-botryoidal.ngrok-free.dev"
+embedded = false
+
+[auth]
+redirect_urls = [
+  "https://hyperdiastolic-bethel-botryoidal.ngrok-free.dev/api/v1/shopify/callback"
+]
+
+[access_scopes]
+scopes = "read_customers,read_products,read_orders,read_assigned_fulfillment_orders,read_merchant_managed_fulfillment_orders"
+
+[webhooks]
+api_version = "2024-10"
