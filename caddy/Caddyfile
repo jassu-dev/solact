@@ -1,5 +1,9 @@
-solact.in, www.solact.in {
+solact.in {
     reverse_proxy dashboard:3001
+}
+
+www.solact.in {
+    redir https://solact.in{uri} permanent
 }
 
 app.solact.in {
