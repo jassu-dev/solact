@@ -107,11 +107,11 @@ export default function SettingsPage() {
           <Pill label="Redis" value={health?.redis || "unknown"} ok={(health?.redis || "").includes("ok")} />
         </div>
         <div className="mt-5 flex items-center gap-3 flex-wrap">
-          <a href="http://localhost:8000/api/v1/health" target="_blank" rel="noreferrer"
+          <a href="https://api.solact.in/api/v1/health" target="_blank" rel="noreferrer"
             className="text-xs px-3 py-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 inline-flex items-center gap-1.5">
             <ExternalLink className="w-3 h-3" /> Open /health
           </a>
-          <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer"
+          <a href="https://api.solact.in/docs" target="_blank" rel="noreferrer"
             className="text-xs px-3 py-1.5 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 inline-flex items-center gap-1.5">
             <ExternalLink className="w-3 h-3" /> Open Swagger docs
           </a>

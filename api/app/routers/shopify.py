@@ -134,7 +134,7 @@ def oauth_callback(
             pass
     db.add(store)
     db.commit()
-    dashboard_redirect = f"http://localhost:3001/onboarding?store_id={store.id}&connected=1"
+    dashboard_redirect = f"https://app.solact.in/onboarding?store_id={store.id}&connected=1"
     return RedirectResponse(url=dashboard_redirect)
 
 

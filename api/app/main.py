@@ -120,7 +120,7 @@ def chat_page():
 
   <script>
     (function(d,t) {
-      var BASE_URL="http://localhost:3000";
+      var BASE_URL="https://chat.solact.in";
       var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
       g.src=BASE_URL+"/packs/js/sdk.js?v=" + new Date().getTime();
       g.defer = true;
@@ -138,14 +138,11 @@ def chat_page():
 </html>"""
 
 
-api_v1 = FastAPI(title="Solact API v1", version="1.0.0")
-api_v1.include_router(auth.router)
-api_v1.include_router(shopify.router)
-api_v1.include_router(knowledge.router)
-api_v1.include_router(conversations.router)
-api_v1.include_router(ai.router, prefix="/ai")
-api_v1.include_router(chatwoot.router, prefix="/integrations")
-api_v1.include_router(health.router)
-api_v1.include_router(shopify.webhooks_router)
-
-app.mount(settings.API_V1_PREFIX, api_v1)
+app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
+app.include_router(shopify.router, prefix=settings.API_V1_PREFIX)
+app.include_router(knowledge.router, prefix=settings.API_V1_PREFIX)
+app.include_router(conversations.router, prefix=settings.API_V1_PREFIX)
+app.include_router(ai.router, prefix=f"{settings.API_V1_PREFIX}/ai")
+app.include_router(chatwoot.router, prefix=f"{settings.API_V1_PREFIX}/integrations")
+app.include_router(health.router, prefix=settings.API_V1_PREFIX)
+app.include_router(shopify.webhooks_router, prefix=settings.API_V1_PREFIX)

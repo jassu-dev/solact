@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     SHOPIFY_API_KEY: str = ""
     SHOPIFY_API_SECRET: str = ""
-    SHOPIFY_REDIRECT_URI: str = "http://localhost:8000/api/v1/shopify/callback"
+    SHOPIFY_REDIRECT_URI: str = "https://api.solact.in/api/v1/shopify/callback"
     SHOPIFY_SCOPES: str = "read_customers,read_products,read_orders,read_assigned_fulfillment_orders,read_merchant_managed_fulfillment_orders"
     SHOPIFY_WEBHOOK_VERSION: str = "2024-10"
 
@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.2
     LLM_MAX_TOKENS: int = 2048
 
-    CHATWOOT_URL: str = "http://localhost:3000"
+    CHATWOOT_URL: str = "https://chat.solact.in"
     CHATWOOT_API_TOKEN: str = ""
     CHATWOOT_ACCOUNT_ID: str = "1"
 
@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     EMBEDDING_DIM: int = 384
 
     API_V1_PREFIX: str = "/api/v1"
-    CORS_ORIGINS: list = ["http://localhost:3001", "http://localhost:3000"]
+    CORS_ORIGINS: list = ["http://localhost:3001", "http://localhost:3000", "https://solact.in", "https://www.solact.in", "https://app.solact.in", "https://api.solact.in", "https://chat.solact.in"]
 
 
 settings = Settings()

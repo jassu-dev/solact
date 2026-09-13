@@ -1,7 +1,14 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+function resolveApiBase(): string {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (typeof window !== "undefined") {
+    if (window.location.hostname.endsWith("solact.in")) return "https://api.solact.in/api/v1";
+  }
+  return "https://api.solact.in/api/v1";
+}
+const API_BASE = resolveApiBase();
 
 export const TOKEN_KEY = "solact_token";
 export const USER_KEY = "solact_user";
