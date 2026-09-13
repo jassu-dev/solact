@@ -50,19 +50,35 @@ def register_user(db: Session, req: RegisterRequest) -> Tuple[User, Organization
 
 
 def login_user(db: Session, email: str, password: str) -> TokenResponse:
-    user = db.query(User).filter(User.email == email.lower()).first()
+    try:
+        user = db.query(User).filter(User.email == email.lower()).first()
+    except Exception as query_err:
+        import logging
+        logging.getLogger("solact.api").error(f"Database query error in login_user: {query_err}")
+        from ..database import Base, engine
+        Base.metadata.create_all(bind=engine)
+        user = db.query(User).filter(User.email == email.lower()).first()
+
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            detail="Invalid email or password. Please check your credentials or register a new account.",
         )
     if not verify_password(password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            detail="Invalid email or password. Please check your credentials or register a new account.",
         )
     token, expire = create_access_token(
         subject={"sub": str(user.id), "org_id": user.organization_id},
+    )
+    return TokenResponse(
+        access_token=token,
+        expires_at=expire,
+        user_id=user.id,
+        organization_id=user.organization_id,
+        email=user.email,
+        name=user.name,
     )
     return TokenResponse(
         access_token=token,

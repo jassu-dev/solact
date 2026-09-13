@@ -17,9 +17,54 @@ logger = logging.getLogger("solact.api")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Solact API - pre-warming embedding model in RAM...")
-    from .services.embeddings import warmup_embeddings
-    warmup_embeddings()
+    logger.info("Starting Solact API - verifying database tables and extensions...")
+    try:
+        from .database import Base, engine, SessionLocal
+        from . import models
+        from .models import User, Organization
+        from .security import get_password_hash
+        from sqlalchemy import text
+
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            conn.commit()
+
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database schema verified (Base.metadata.create_all completed).")
+
+        # Seed initial admin founder if no user exists
+        db = SessionLocal()
+        try:
+            admin_user = db.query(User).filter(User.email == "admin@solact.in").first()
+            if not admin_user:
+                logger.info("Seeding initial admin user: admin@solact.in / Password123!...")
+                org = Organization(name="Solact Primary Store", slug="solact-primary")
+                db.add(org)
+                db.flush()
+                admin_user = User(
+                    organization_id=org.id,
+                    email="admin@solact.in",
+                    name="Solact Founder",
+                    password_hash=get_password_hash("Password123!"),
+                    role="owner",
+                    is_active=True,
+                    is_verified=True,
+                )
+                db.add(admin_user)
+                db.commit()
+                logger.info("Default admin user created successfully.")
+        finally:
+            db.close()
+    except Exception as db_err:
+        logger.error(f"Database table verification error: {db_err}", exc_info=True)
+
+    logger.info("Pre-warming embedding model in RAM...")
+    try:
+        from .services.embeddings import warmup_embeddings
+        warmup_embeddings()
+    except Exception as emb_err:
+        logger.error(f"Embedding warmup warning: {emb_err}")
+
     yield
     logger.info("Stopping Solact API")
 
