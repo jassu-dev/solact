@@ -76,6 +76,18 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import traceback
+    tb = traceback.format_exc()
+    logger.error(f"Global unhandled error: {tb}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Server Error: {str(exc)}", "type": exc.__class__.__name__}
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[

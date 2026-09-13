@@ -25,3 +25,36 @@ def health(db: Session = Depends(get_db)):
     except Exception as e:
         redis_status = f"error: {e}"
     return HealthResponse(status="ok", postgres=pg_status, redis=redis_status)
+
+@router.get("/db-init")
+def db_init(db: Session = Depends(get_db)):
+    from ..database import Base, engine, SessionLocal
+    from ..models import User, Organization
+    from ..security import get_password_hash
+    from sqlalchemy import text
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            conn.commit()
+        Base.metadata.create_all(bind=engine)
+        user = db.query(User).filter(User.email == "admin@solact.in").first()
+        if not user:
+            org = Organization(name="Solact Primary Store", slug="solact-primary")
+            db.add(org)
+            db.flush()
+            user = User(
+                organization_id=org.id,
+                email="admin@solact.in",
+                name="Solact Founder",
+                password_hash=get_password_hash("Password123!"),
+                role="owner",
+                is_active=True,
+                is_verified=True,
+            )
+            db.add(user)
+            db.commit()
+            return {"status": "ok", "message": "Tables created and admin user seeded successfully!"}
+        return {"status": "ok", "message": "Tables exist and admin user is present!"}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "error": str(e), "trace": traceback.format_exc()}

@@ -14,13 +14,33 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest, db: Session = Depends(get_db)):
-    user, org = register_user(db, payload)
-    return login_user(db, user.email, payload.password)
+    try:
+        user, org = register_user(db, payload)
+        return login_user(db, user.email, payload.password)
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Registration failed: {str(e)}"
+        )
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    return login_user(db, payload.email, payload.password)
+    try:
+        return login_user(db, payload.email, payload.password)
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Login failed: {str(e)}"
+        )
 
 
 @router.post("/login/form", response_model=TokenResponse, include_in_schema=False)
