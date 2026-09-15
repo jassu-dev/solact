@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "Solact — Your AI Support Employee for Shopify",
   description:
-    "Automatically answer customer questions, track orders, handle support requests and notify customers through email and WhatsApp.",
+    "Automatically answer customer questions, track orders, handle support requests and notify customers through email and storefront live chat.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",

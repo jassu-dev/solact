@@ -58,6 +58,18 @@ class ChatwootClient:
             "private": private,
         })
 
+    def get_agents(self) -> List[Dict[str, Any]]:
+        try:
+            res = self._get("/agents")
+            if isinstance(res, list):
+                return res
+            if isinstance(res, dict) and "payload" in res:
+                return res["payload"]
+            return []
+        except Exception as e:
+            logger.warning(f"Failed to fetch Chatwoot agents via API: {e}")
+            return []
+
     def assign_agent(self, conversation_id: int, agent_id: Optional[int] = None) -> dict:
         payload = {"assignee_id": agent_id} if agent_id else {}
         return self._post(f"/conversations/{conversation_id}/assignments", payload)
@@ -255,26 +267,85 @@ def add_ai_message(
     return msg
 
 
-def get_available_agents(db: Session, inbox_id: Optional[int] = 1) -> List[Dict[str, Any]]:
+def pick_next_agent(db: Session, store: Store, inbox_id: Optional[int] = None) -> Tuple[Optional[int], Optional[str]]:
+    """
+    Intelligently assigns an escalated conversation:
+    - If 0 agents in Chatwoot: return (None, None) (unassigned in inbox queue)
+    - If 1 agent: handle all to him
+    - If >1 agents: round-robin split among them
+    """
+    cw = ChatwootClient()
+    agents = []
+    if cw.is_configured():
+        agents = cw.get_agents()
+
+    if not agents:
+        from ..models import User
+        users = db.query(User).filter(User.organization_id == store.organization_id, User.is_active == True).all()
+        if users:
+            agents = [{"id": u.id, "name": u.name or u.email, "email": u.email} for u in users]
+
+    if not agents:
+        return None, None
+
+    if len(agents) == 1:
+        single = agents[0]
+        return single.get("id"), single.get("name") or single.get("email")
+
+    # More than 1 agent: split evenly using round-robin Redis counter
+    from .ai_agent import _get_redis_client
+    r = _get_redis_client()
+    idx = 0
+    if r:
+        try:
+            count = r.incr(f"solact:store:{store.id}:agent_rr")
+            idx = (count - 1) % len(agents)
+        except Exception:
+            idx = 0
+    chosen = agents[idx]
+    return chosen.get("id"), chosen.get("name") or chosen.get("email")
+
+
+def is_within_support_hours(store_id: int) -> Tuple[bool, str]:
+    """
+    Checks if current time in store's timezone is within the scheduled working hours.
+    Returns (is_online, message).
+    """
+    from ..routers.store_settings import get_store_settings_dict
+    cfg = get_store_settings_dict(store_id)
+    if not cfg.get("support_hours_enabled", True):
+        return True, ""
+
     try:
-        from sqlalchemy import text
-        rows = db.execute(
-            text("""
-                SELECT u.id, u.name 
-                FROM users u
-                JOIN inbox_members im ON u.id = im.user_id
-                WHERE im.inbox_id = :inbox_id AND u.availability = 0
-                ORDER BY u.id ASC
-            """),
-            {"inbox_id": inbox_id or 1}
-        ).fetchall()
-        if rows:
-            return [{"id": r[0], "name": r[1]} for r in rows]
-        rows = db.execute(text("SELECT id, name FROM users WHERE availability = 0 ORDER BY id ASC")).fetchall()
-        return [{"id": r[0], "name": r[1]} for r in rows]
+        from zoneinfo import ZoneInfo
+        import datetime
+        tz_name = cfg.get("support_timezone", "UTC") or "UTC"
+        try:
+            tz = ZoneInfo(tz_name)
+        except Exception:
+            tz = ZoneInfo("UTC")
+
+        now = datetime.datetime.now(tz)
+        allowed_days = cfg.get("support_days", [1, 2, 3, 4, 5])
+        if now.isoweekday() not in allowed_days:
+            return False, cfg.get("offline_escalation_message") or f"Our human support team is currently offline for the day. Operating hours: Mon-Fri 9am-6pm ({tz_name})."
+
+        start_str = cfg.get("support_hours_start", "09:00")
+        end_str = cfg.get("support_hours_end", "18:00")
+        start_parts = [int(p) for p in start_str.split(":")]
+        end_parts = [int(p) for p in end_str.split(":")]
+
+        start_min = start_parts[0] * 60 + start_parts[1]
+        end_min = end_parts[0] * 60 + end_parts[1]
+        cur_min = now.hour * 60 + now.minute
+
+        if start_min <= cur_min <= end_min:
+            return True, ""
+        else:
+            return False, cfg.get("offline_escalation_message") or f"Our human support team is currently offline. Operating hours: {start_str} - {end_str} ({tz_name})."
     except Exception as e:
-        logger.warning(f"Failed to check available agents: {e}")
-        return []
+        logger.debug(f"Error checking support hours: {e}")
+        return True, ""
 
 
 def escalate_conversation(
@@ -287,26 +358,44 @@ def escalate_conversation(
     conversation.escalated = True
     conversation.escalated_reason = reason
     conversation.escalated_at = datetime.utcnow()
+
+    # Determine assigned agent if not explicitly given
+    assigned_name = None
+    if not assign_to_agent_id:
+        store = db.query(Store).filter(Store.id == conversation.store_id).first()
+        if store:
+            assign_to_agent_id, assigned_name = pick_next_agent(db, store, conversation.chatwoot_inbox_id)
+
     db.add(conversation)
     db.commit()
     db.refresh(conversation)
+
+    # Check operating hours
+    is_online, offline_msg = is_within_support_hours(conversation.store_id)
 
     cw_id = conversation.display_id or conversation.chatwoot_conversation_id or conversation.id
     if cw_id:
         cw = ChatwootClient()
         if cw.is_configured():
             try:
-                cw.add_label(cw_id, "needs-human")
+                status_label = "needs-human" if is_online else "offline-queue"
+                cw.add_label(cw_id, status_label)
                 cw.update_status(cw_id, "open")
                 if assign_to_agent_id:
                     cw.assign_agent(cw_id, assign_to_agent_id)
-                if reason:
-                    cw.send_message(
-                        conversation.chatwoot_inbox_id or 1,
-                        cw_id,
-                        f"[Auto-escalated to human team] Reason: {reason}",
-                        private=True,
-                    )
+                
+                note_parts = [f"[Auto-escalated to human team] Reason: {reason or 'Customer request'}"]
+                if assigned_name:
+                    note_parts.append(f"Assigned agent: {assigned_name}")
+                if not is_online:
+                    note_parts.append(f"Note: Queued outside working hours ({offline_msg})")
+
+                cw.send_message(
+                    conversation.chatwoot_inbox_id or 1,
+                    cw_id,
+                    "\n".join(note_parts),
+                    private=True,
+                )
             except Exception as e:
                 logger.warning(f"Chatwoot escalate failed: {e}")
     return conversation

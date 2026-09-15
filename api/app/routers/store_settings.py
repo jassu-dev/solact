@@ -30,6 +30,12 @@ class StoreAIConfig(BaseModel):
     auto_escalate_sentiment: bool = True
     business_hours: Optional[str] = "24/7 AI Coverage"
     welcome_message: Optional[str] = "Hi! How can I help you today?"
+    support_hours_enabled: bool = True
+    support_hours_start: Optional[str] = "09:00"
+    support_hours_end: Optional[str] = "18:00"
+    support_timezone: Optional[str] = "UTC"
+    support_days: Optional[list] = [1, 2, 3, 4, 5]
+    offline_escalation_message: Optional[str] = "Our human support team is currently offline. Operating hours: Mon–Fri 9am–6pm. We have logged your ticket and our team will follow up as soon as we reopen!"
 
 
 def get_store_settings_dict(store_id: int) -> Dict[str, Any]:
@@ -41,6 +47,12 @@ def get_store_settings_dict(store_id: int) -> Dict[str, Any]:
         "auto_escalate_sentiment": True,
         "business_hours": "24/7 AI Coverage",
         "welcome_message": "Hi! How can I help you today?",
+        "support_hours_enabled": True,
+        "support_hours_start": "09:00",
+        "support_hours_end": "18:00",
+        "support_timezone": "UTC",
+        "support_days": [1, 2, 3, 4, 5],
+        "offline_escalation_message": "Our human support team is currently offline. Operating hours: Mon–Fri 9am–6pm. We have logged your ticket and our team will follow up as soon as we reopen!",
     }
     r = _get_redis()
     if not r:

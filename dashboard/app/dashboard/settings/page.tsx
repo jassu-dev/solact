@@ -424,8 +424,8 @@ export default function SettingsPage() {
                     <MessageSquare className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-900">Chatwoot & WhatsApp Bridge</div>
-                    <div className="text-[11px] text-slate-500">Omnichannel agent handoff</div>
+                    <div className="text-xs font-bold text-slate-900">Chatwoot Live Support Bridge</div>
+                    <div className="text-[11px] text-slate-500">Human agent escalation & handoff</div>
                   </div>
                 </div>
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">

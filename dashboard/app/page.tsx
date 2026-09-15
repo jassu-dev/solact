@@ -77,15 +77,15 @@ const DEMO_SCENARIOS = [
     },
   },
   {
-    id: "whatsapp_notify",
-    title: "WhatsApp & Email Sync",
-    tag: "Omnichannel",
-    prompt: "Can you send the delivery tracking updates to my WhatsApp number?",
+    id: "email_notify",
+    title: "Email & Tracking Sync",
+    tag: "Storefront & Email",
+    prompt: "Can you send the delivery tracking updates and invoice to my email?",
     response:
-      "Done! I've linked +1 (555) 382-9912 to order #10492. You will receive automated real-time delivery notifications and out-for-delivery alerts via WhatsApp and email.",
+      "Done! I've sent the tracking link and receipt for order #10492 to sarah@example.com. You will also receive automated out-for-delivery updates as soon as the courier scans your package.",
     tool: {
-      name: "omnichannel_whatsapp_notify",
-      status: "Subscribed · WhatsApp & Email",
+      name: "automated_email_dispatch",
+      status: "Dispatched · Delivery Tracking & Invoice",
       details: "Template: shipping_update_v1",
     },
   },
@@ -134,7 +134,7 @@ export default function HomePage() {
     email: "",
     storeUrl: "",
     monthlyOrders: "500-2500",
-    channels: ["web", "whatsapp"],
+    channels: ["web", "email"],
     notes: "",
   });
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
@@ -214,7 +214,7 @@ export default function HomePage() {
         };
       } else {
         reply =
-          "Thank you for contacting us! I'm Solact, your AI support employee. I can help you check orders, process returns, answer product questions, and notify you on WhatsApp or Email.";
+          "Thank you for contacting us! I'm Solact, your AI support employee. I can help you check orders, process returns, answer product questions, and send tracking links to your email.";
         toolInfo = {
           name: "solact_ai_assistant",
           status: "Grounded in Store Data",
@@ -272,7 +272,7 @@ export default function HomePage() {
             Solact V1 Live
           </span>
           <span>
-            Now accepting Shopify merchants for white-glove manual onboarding with WhatsApp & Email notifications.
+            Now accepting Shopify merchants for white-glove onboarding with automated email & live chat support.
           </span>
           <a
             href="#waitlist"
@@ -352,7 +352,7 @@ export default function HomePage() {
             <Sparkles className="w-3.5 h-3.5 text-brand-600" />
             <span>Built Exclusively for Shopify Stores</span>
             <span className="w-1 h-1 rounded-full bg-brand-400" />
-            <span className="text-slate-500 font-medium">WhatsApp · Email · Chatwoot</span>
+            <span className="text-slate-500 font-medium">Storefront Live Chat · Email · Chatwoot</span>
           </div>
 
           {/* Headline requested by user */}
@@ -365,7 +365,7 @@ export default function HomePage() {
 
           {/* Subtitle requested by user */}
           <p className="mt-8 text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto font-normal leading-relaxed">
-            Automatically answer customer questions, track orders, handle support requests and notify customers through email and WhatsApp.
+            Automatically answer customer questions, track orders, handle support requests and notify customers through email and storefront live chat.
           </p>
 
           {/* Action CTAs */}
@@ -420,11 +420,11 @@ export default function HomePage() {
 
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 mt-0.5">
-                <Smartphone className="w-4 h-4" />
+                <Mail className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-slate-900 text-sm">WhatsApp & Email</div>
-                <div className="text-xs text-slate-500 mt-0.5">Multi-channel customer alerts & replies</div>
+                <div className="font-bold text-slate-900 text-sm">Storefront & Email</div>
+                <div className="text-xs text-slate-500 mt-0.5">Automated customer tracking alerts & replies</div>
               </div>
             </div>
           </div>
@@ -660,13 +660,13 @@ export default function HomePage() {
           {/* Card 4 */}
           <div className="bg-white border border-slate-200 rounded-2xl p-7 shadow-sm hover:shadow-md transition">
             <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-5">
-              <Smartphone className="w-6 h-6" />
+              <Mail className="w-6 h-6" />
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">
-              WhatsApp & Email Notifications
+              Email & Delivery Tracking Notifications
             </h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Don't keep customers waiting on your storefront. Solact automatically dispatches delivery milestones, order confirmation summaries, and answers via WhatsApp and email.
+              Don't keep customers waiting on your storefront. Solact automatically dispatches delivery milestones, order confirmation summaries, and tracking links via email and live chat.
             </p>
             <div className="mt-5 pt-5 border-t border-slate-100 flex items-center gap-2 text-xs font-semibold text-purple-600">
               <Check className="w-4 h-4" /> Automated transactional alerts
@@ -755,7 +755,7 @@ export default function HomePage() {
                 Go Live & Human Routing
               </h3>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Connect your Chatwoot inbox and WhatsApp channel. Solact starts handling inquiries 24/7, routing complex cases to your agents automatically.
+                Connect your Chatwoot inbox and storefront live chat. Solact starts handling inquiries 24/7, routing complex cases to your agents automatically.
               </p>
             </div>
           </div>
@@ -769,7 +769,7 @@ export default function HomePage() {
                 Prefer Us to Set Everything Up for You?
               </h3>
               <p className="text-sm text-slate-300 mt-2 max-w-xl">
-                Our engineering team will jump on a 1-on-1 call, configure your Shopify store, verify your policies in our AI Test Lab, and test WhatsApp notifications before launch.
+                Our engineering team will jump on a 1-on-1 call, configure your Shopify store, verify your policies in our AI Test Lab, and test live chat & email notifications before launch.
               </p>
             </div>
             <a
@@ -895,7 +895,7 @@ export default function HomePage() {
                 For High-Velocity Stores
               </h3>
               <p className="text-sm text-slate-300 mt-2">
-                Automate order tracking, WhatsApp notifications, and human escalations.
+                Automate order tracking, email notifications, and human escalations.
               </p>
 
               <div className="mt-6 flex items-baseline gap-1">
@@ -916,7 +916,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Check className="w-4 h-4 text-brand-400 shrink-0" />
-                  <span><strong>WhatsApp & Email</strong> automated notifications</span>
+                  <span><strong>Email & Storefront</strong> automated notifications</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Check className="w-4 h-4 text-brand-400 shrink-0" />
@@ -1108,11 +1108,10 @@ export default function HomePage() {
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
                     Channels You Want Solact to Automate:
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {[
                       { id: "web", label: "Web Chat Widget", icon: MessageSquare },
-                      { id: "whatsapp", label: "WhatsApp Alerts", icon: Smartphone },
-                      { id: "email", label: "Email Auto-Reply", icon: Mail },
+                      { id: "email", label: "Email Auto-Reply & Tracking", icon: Mail },
                     ].map((ch) => (
                       <label
                         key={ch.id}

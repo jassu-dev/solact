@@ -89,7 +89,7 @@ export default function AnalyticsPage() {
       value: totalConv,
       icon: MessageSquare,
       color: "from-blue-500 to-blue-700",
-      sub: "Across Web, WhatsApp & Email",
+      sub: "Across Storefront Live Chat & Email",
     },
     {
       label: "AI Deflection Rate",
@@ -143,9 +143,8 @@ export default function AnalyticsPage() {
   ];
 
   const channelBreakdown = [
-    { name: "Storefront Web Chat", value: 65, color: "#2563eb", icon: MessageSquare },
-    { name: "WhatsApp Alerts & Chat", value: 25, color: "#10b981", icon: Smartphone },
-    { name: "Email Follow-ups", value: 10, color: "#8b5cf6", icon: Mail },
+    { name: "Storefront Web Chat", value: 82, color: "#2563eb", icon: MessageSquare },
+    { name: "Email Follow-ups", value: 18, color: "#8b5cf6", icon: Mail },
   ];
 
   return (
