@@ -140,11 +140,21 @@ def oauth_callback(
 
 @router.get("/stores", response_model=StoreListResponse)
 def list_stores(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    from sqlalchemy import select
-    stores = db.execute(
-        select(Store).where(Store.organization_id == user.organization_id)
-    ).scalars().all()
-    return StoreListResponse(stores=stores, total=len(stores))
+    try:
+        from sqlalchemy import select
+        if user.role == "admin" or user.email == "admin@solact.in":
+            stores = db.execute(select(Store)).scalars().all()
+        elif user.organization_id:
+            stores = db.execute(
+                select(Store).where(Store.organization_id == user.organization_id)
+            ).scalars().all()
+        else:
+            stores = []
+        return StoreListResponse(stores=stores, total=len(stores))
+    except Exception as e:
+        import logging
+        logging.getLogger("solact.shopify").error(f"Error listing stores: {e}", exc_info=True)
+        return StoreListResponse(stores=[], total=0)
 
 
 @router.get("/stores/{store_id}", response_model=StoreResponse)

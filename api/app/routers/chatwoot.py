@@ -251,7 +251,22 @@ def get_agents_overview(
         Conversation.escalated == True,
     ).scalar() or 0
     deflected_count = max(total_convs - escalated_count, 0)
-    deflection_rate = round((deflected_count / max(total_convs, 1)) * 100, 1) if total_convs > 0 else 100.0
+    deflection_rate = round((deflected_count / total_convs) * 100, 1) if total_convs > 0 else 0.0
+    escalated_rate = round((escalated_count / total_convs) * 100, 1) if total_convs > 0 else 0.0
+
+    # Compute real AI latency if runs exist
+    real_latency_ms = None
+    try:
+        from ..models import AIRun
+        avg_s = db.query(func.avg(func.extract('epoch', AIRun.completed_at - AIRun.started_at))).filter(
+            AIRun.organization_id == user.organization_id,
+            AIRun.completed_at.is_not(None),
+            AIRun.started_at.is_not(None)
+        ).scalar()
+        if avg_s and avg_s > 0:
+            real_latency_ms = f"{int(avg_s * 1000)} ms"
+    except Exception:
+        pass
 
     # 4. Schedule settings
     sid = target_store.id if target_store else 1
@@ -263,10 +278,10 @@ def get_agents_overview(
         "escalations": formatted_escalations,
         "metrics": {
             "deflection_rate": f"{deflection_rate}%",
-            "escalated_rate": f"{round((escalated_count / max(total_convs, 1)) * 100, 1)}%",
+            "escalated_rate": f"{escalated_rate}%",
             "total_conversations": total_convs,
             "escalated_conversations": escalated_count,
-            "avg_latency": "740 ms",
+            "avg_latency": real_latency_ms or "—",
             "active_inboxes": "Shopify Web + Email",
         },
         "schedule": {

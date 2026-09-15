@@ -35,11 +35,11 @@ export default function HumanAgentsPage() {
   const [agents, setAgents] = useState<any[]>([]);
   const [escalations, setEscalations] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any>({
-    deflection_rate: "100%",
-    escalated_rate: "0%",
+    deflection_rate: "0.0%",
+    escalated_rate: "0.0%",
     total_conversations: 0,
     escalated_conversations: 0,
-    avg_latency: "740 ms",
+    avg_latency: "—",
     active_inboxes: "Shopify Web + Email",
   });
 
@@ -97,19 +97,23 @@ export default function HumanAgentsPage() {
     {
       label: "AI Deflection Rate",
       value: metrics.deflection_rate,
-      sub: `${metrics.total_conversations - metrics.escalated_conversations} resolved autonomously by Solact AI`,
+      sub: metrics.total_conversations > 0
+        ? `${metrics.total_conversations - metrics.escalated_conversations} resolved autonomously by Solact AI`
+        : "No conversations recorded yet",
       color: "text-emerald-600 bg-emerald-50 border-emerald-200",
     },
     {
       label: "Escalated to Human",
       value: metrics.escalated_rate,
-      sub: `${metrics.escalated_conversations} transferred to Chatwoot`,
+      sub: metrics.total_conversations > 0
+        ? `${metrics.escalated_conversations} transferred to Chatwoot`
+        : "0 escalations required",
       color: "text-blue-600 bg-blue-50 border-blue-200",
     },
     {
       label: "Avg. AI Latency",
-      value: metrics.avg_latency || "740 ms",
-      sub: "Sub-second customer response",
+      value: metrics.avg_latency || "—",
+      sub: metrics.total_conversations > 0 ? "Sub-second customer response" : "Ready for incoming chats",
       color: "text-purple-600 bg-purple-50 border-purple-200",
     },
     {

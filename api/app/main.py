@@ -82,12 +82,15 @@ async def lifespan(app: FastAPI):
     except Exception as db_err:
         logger.error(f"Database initialization error: {db_err}", exc_info=True)
 
-    logger.info("Pre-warming embedding model in RAM...")
-    try:
-        from .services.embeddings import warmup_embeddings
-        warmup_embeddings()
-    except Exception as emb_err:
-        logger.error(f"Embedding warmup warning: {emb_err}")
+    logger.info("Initializing Solact AI services...")
+    import threading
+    def _bg_warmup():
+        try:
+            from .services.embeddings import warmup_embeddings
+            warmup_embeddings()
+        except Exception as emb_err:
+            logger.error(f"Embedding warmup warning: {emb_err}")
+    threading.Thread(target=_bg_warmup, daemon=True, name="fastembed-warmup").start()
 
     yield
     logger.info("Stopping Solact API")
