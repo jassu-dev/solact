@@ -54,19 +54,14 @@ services:
       CHATWOOT_URL: http://chatwoot-web:3000
       CHATWOOT_API_TOKEN: solact_ai_bot_token_123456789
       CHATWOOT_ACCOUNT_ID: "1"
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
     ports:
       - "8000:8000"
     volumes:
       - ./api:/app
       - solact_hf_cache:/root/.cache/huggingface
-    command: >-
-      sh -c "
-      echo 'Running migrations...' &&
-      alembic upgrade head ||
-      (python -c 'from app.database import Base, engine; from app import models as m; from sqlalchemy import text; c = engine.connect(); c.execute(text(\"CREATE EXTENSION IF NOT EXISTS vector\")); c.commit(); c.close(); Base.metadata.create_all(bind=engine); print(\"Tables created via SQLAlchemy fallback\")') &&
-      echo 'Starting API...' &&
-      uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --proxy-headers
-      "
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --proxy-headers
 
   worker:
     build:

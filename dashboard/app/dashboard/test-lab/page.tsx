@@ -10,7 +10,6 @@ import {
   Activity, Zap,
 } from "lucide-react";
 import { cn, formatDate, formatCurrency } from "@/lib/utils";
-import { embedQuery } from "@/lib/embeddings";
 import { toast } from "sonner";
 import React from "react";
 
@@ -93,16 +92,12 @@ function TestLabPageContent() {
     setLoading(true);
     setResult(null);
     try {
-      // 10ms-20ms client-side embedding via @xenova/transformers ONNX
-      let embedding: number[] | undefined;
-      try {
-        embedding = await embedQuery(query.trim());
-      } catch (embErr) {
-        console.warn("Client embedding skipped, falling back to server model:", embErr);
-      }
-      const r = await api.post("/ai/test-lab", { query: query.trim(), embedding });
+      const r = await api.post("/ai/test-lab", { query: query.trim() });
       setResult(r.data);
       setOpen({ response: true, shopify: true, tools: true, knowledge: true });
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || err?.message || "Failed to execute AI test run";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
