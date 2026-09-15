@@ -77,10 +77,20 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         {/* User Account / Footer */}
         <div className="border-t border-slate-200 p-3 space-y-2">
           <div className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-100">
-            <div className="text-xs font-semibold text-slate-900 truncate">
-              {user?.name || user?.email || "Shopify Merchant"}
+            <div className="flex items-center justify-between gap-1">
+              <div className="text-xs font-semibold text-slate-900 truncate">
+                {user?.name || user?.email || "Shopify Merchant"}
+              </div>
+              <span className={cn(
+                "text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider",
+                (user?.role === "admin" || user?.email === "admin@solact.in")
+                  ? "bg-purple-100 text-purple-700 border border-purple-200"
+                  : "bg-blue-100 text-blue-700 border border-blue-200"
+              )}>
+                {(user?.role === "admin" || user?.email === "admin@solact.in") ? "Admin" : "Merchant"}
+              </span>
             </div>
-            <div className="text-[11px] text-slate-500 truncate">
+            <div className="text-[11px] text-slate-500 truncate mt-0.5">
               {user?.email || "admin@solact.in"}
             </div>
           </div>

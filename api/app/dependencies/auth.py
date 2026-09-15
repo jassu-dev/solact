@@ -79,3 +79,12 @@ def get_client_ip(request: Request) -> str:
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
+
+
+def require_admin_user(user: User = Depends(get_current_user)) -> User:
+    if user.role != "admin" and user.email != "admin@solact.in":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Platform Admin privileges required to access this resource",
+        )
+    return user

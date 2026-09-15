@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from .config import settings
 from .database import Base, engine
-from .routers import auth, shopify, knowledge, conversations, ai, chatwoot, health
+from .routers import auth, shopify, knowledge, conversations, ai, chatwoot, health, admin, store_settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         logger.info("Isolated Solact database schema verified.")
 
-        # Seed initial admin user if not exists
+        # Seed initial admin user if not exists or ensure role="admin"
         db = SessionLocal()
         try:
             admin_user = db.query(User).filter(User.email == "admin@solact.in").first()
@@ -65,13 +65,18 @@ async def lifespan(app: FastAPI):
                     email="admin@solact.in",
                     name="Solact Founder",
                     password_hash=get_password_hash("Password123!"),
-                    role="owner",
+                    role="admin",
                     is_active=True,
                     is_verified=True,
                 )
                 db.add(admin_user)
                 db.commit()
-                logger.info("Default admin user created: admin@solact.in / Password123!")
+                logger.info("Default admin user created: admin@solact.in / Password123! with role='admin'")
+            else:
+                if admin_user.role != "admin":
+                    admin_user.role = "admin"
+                    db.commit()
+                    logger.info("Upgraded admin@solact.in to role='admin'")
         finally:
             db.close()
     except Exception as db_err:
@@ -230,5 +235,7 @@ app.include_router(knowledge.router, prefix=settings.API_V1_PREFIX)
 app.include_router(conversations.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ai.router, prefix=f"{settings.API_V1_PREFIX}/ai")
 app.include_router(chatwoot.router, prefix=f"{settings.API_V1_PREFIX}/integrations")
+app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
+app.include_router(store_settings.router, prefix=settings.API_V1_PREFIX)
 app.include_router(health.router, prefix=settings.API_V1_PREFIX)
 app.include_router(shopify.webhooks_router, prefix=settings.API_V1_PREFIX)

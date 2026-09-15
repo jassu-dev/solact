@@ -78,85 +78,24 @@ def _json_safe(v):
     return v
 
 
+from .llm_router import LLMRouter
+
+
 class LLMClient:
-    _http_client: Optional[httpx.Client] = None
-
-    @classmethod
-    def get_http_client(cls) -> httpx.Client:
-        if cls._http_client is None or cls._http_client.is_closed:
-            cls._http_client = httpx.Client(
-                timeout=httpx.Timeout(60.0, connect=5.0),
-                limits=httpx.Limits(max_keepalive_connections=20, max_connections=50, keepalive_expiry=300.0),
-            )
-        return cls._http_client
-
     def __init__(self):
-        self.api_base = settings.LLM_API_BASE.rstrip("/")
-        self.api_key = settings.LLM_API_KEY
-        self.model = settings.LLM_MODEL
-        self.temperature = settings.LLM_TEMPERATURE
-        self.max_tokens = settings.LLM_MAX_TOKENS
+        self.router = LLMRouter()
 
     def is_configured(self) -> bool:
-        return bool(self.api_key) and bool(self.api_base)
+        return self.router.is_configured()
 
-    def chat(self, messages: List[Dict[str, Any]], tools: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
-        if not self.is_configured():
-            return self._mock_response(messages, tools)
-        url = f"{self.api_base}/chat/completions"
-        payload: Dict[str, Any] = {
-            "model": self.model,
-            "messages": messages,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-        }
-        if tools:
-            payload["tools"] = tools
-            payload["tool_choice"] = "auto"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-        try:
-            client = self.get_http_client()
-            r = client.post(url, headers=headers, json=payload)
-            r.raise_for_status()
-            data = r.json()
-            choice = data["choices"][0]
-            msg = choice["message"]
-            usage = data.get("usage", {}) or {}
-            return {
-                "content": msg.get("content"),
-                "tool_calls": msg.get("tool_calls") or [],
-                "usage": {
-                    "prompt_tokens": usage.get("prompt_tokens", 0),
-                    "completion_tokens": usage.get("completion_tokens", 0),
-                    "total_tokens": usage.get("total_tokens", 0),
-                },
-                "raw": data,
-            }
-        except Exception as e:
-            logger.exception("LLM call failed")
-            return {
-                "error": str(e),
-                "content": None,
-                "tool_calls": [],
-                "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-            }
-
-    def _mock_response(self, messages, tools):
-        last = messages[-1]["content"] if messages else ""
-        content = (
-            "I'm sorry but the LLM API key is not configured. "
-            "Please set LLM_API_KEY in the environment. "
-            f"(Your last message: {str(last)[:100]})"
-        )
-        return {
-            "content": content,
-            "tool_calls": [],
-            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-            "mock": True,
-        }
+    def chat(
+        self,
+        messages: List[Dict[str, Any]],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        intent: str = "general",
+        query: str = "",
+    ) -> Dict[str, Any]:
+        return self.router.chat(messages, tools=tools, intent=intent, query=query)
 
 
 def _detect_customer_identifiers(query: str) -> Dict[str, Any]:
@@ -419,10 +358,23 @@ def run_ai_employee(
 
         tools_available = tools_json_schema()
 
+        from ..routers.store_settings import get_store_settings_dict
+        store_cfg = get_store_settings_dict(store.id)
+        bot_name = store_cfg.get("bot_name") or "Solact"
+        bot_tone = store_cfg.get("bot_tone", "friendly")
+        custom_instructions = store_cfg.get("custom_instructions", "").strip()
+
+        tone_guidance = "Be warm, polite, empathetic, and helpful."
+        if bot_tone == "concise":
+            tone_guidance = "Be direct, concise, and factual without conversational filler."
+        elif bot_tone == "luxury":
+            tone_guidance = "Use an elegant, professional, luxury brand tone."
+
         store_name = store.name or "our store"
         system_parts = [
-            f"You are Solact, an AI customer support employee for the Shopify store '{store_name}'.",
+            f"You are {bot_name}, an AI customer support employee for the Shopify store '{store_name}'.",
             f"Store domain: {store.shopify_domain}.",
+            f"Tone Guidelines: {tone_guidance}",
             "Rules:",
             "1. Be concise, polite, and helpful. Never make up info.",
             "2. Only answer using shopify_context, retrieved knowledge, and tool results.",
@@ -434,6 +386,8 @@ def run_ai_employee(
             "8. Do NOT ask the customer for passwords or card numbers. If they share, do not echo, escalate.",
             "9. If the customer asks what you can do, how you can help, or about your capabilities, explain clearly and concisely that you can assist with tracking orders, answering store policies (shipping, returns, warranty), providing product details, and connecting them with a human support agent whenever needed.",
         ]
+        if custom_instructions:
+            system_parts.append(f"\n=== Merchant Specific Guidelines ===\n{custom_instructions}")
         if shopify_context:
             system_parts.append("\n=== Current Shopify Context ===")
             system_parts.append(json.dumps(shopify_context, indent=2, default=str))
@@ -475,9 +429,16 @@ def run_ai_employee(
         raw_llm_response_parts = []
         prompt_tok = 0
         completion_tok = 0
+        last_model_used = settings.LLM_MODEL
 
         for it in range(max_iterations):
-            resp = llm.chat(messages, tools=tools_available if it < max_iterations - 1 else None)
+            resp = llm.chat(
+                messages,
+                tools=tools_available if it < max_iterations - 1 else None,
+                intent=intent,
+                query=customer_query,
+            )
+            last_model_used = resp.get("model_used") or last_model_used
             usage = resp.get("usage") or {}
             prompt_tok += int(usage.get("prompt_tokens", 0))
             completion_tok += int(usage.get("completion_tokens", 0))
@@ -581,7 +542,7 @@ def run_ai_employee(
         run.prompt_tokens = prompt_tok
         run.completion_tokens = completion_tok
         run.total_tokens = prompt_tok + completion_tok
-        run.llm_model = llm.model
+        run.llm_model = last_model_used
         run.escalated = escalated
         run.escalation_reason = escalation_reason
         run.status = RunStatus.escalated if escalated else RunStatus.completed

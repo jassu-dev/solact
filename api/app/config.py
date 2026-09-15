@@ -32,9 +32,16 @@ class Settings(BaseSettings):
     SHOPIFY_SCOPES: str = "read_customers,read_products,read_orders,read_assigned_fulfillment_orders,read_merchant_managed_fulfillment_orders"
     SHOPIFY_WEBHOOK_VERSION: str = "2024-10"
 
-    LLM_API_BASE: str = "https://api.openai.com/v1"
+    # Gemini LLM & Router Configuration (Centrally managed by Solact Platform)
+    LLM_ROUTER_ENABLED: bool = True
+    ROUTER_STRATEGY: str = "auto_optimize"  # auto_optimize | cost_saver | max_intelligence
+    LLM_API_BASE: str = "https://generativelanguage.googleapis.com/v1beta/openai"
     LLM_API_KEY: str = ""
-    LLM_MODEL: str = "gpt-4o-mini"
+    GEMINI_API_KEY: str = ""
+    LLM_MODEL: str = "gemini-2.5-flash"
+    LLM_FAST_MODEL: str = "gemini-2.5-flash"
+    LLM_REASONING_MODEL: str = "gemini-2.5-pro"
+    LLM_FALLBACK_MODEL: str = "gemini-2.0-flash"
     LLM_TEMPERATURE: float = 0.2
     LLM_MAX_TOKENS: int = 2048
 

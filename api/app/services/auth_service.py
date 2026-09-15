@@ -38,7 +38,7 @@ def register_user(db: Session, req: RegisterRequest) -> Tuple[User, Organization
         email=req.email.lower(),
         name=req.name,
         password_hash=get_password_hash(req.password),
-        role="owner",
+        role="admin" if req.email.lower() == "admin@solact.in" else "merchant",
         is_active=True,
         is_verified=True,
     )

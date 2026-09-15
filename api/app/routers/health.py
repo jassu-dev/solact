@@ -47,14 +47,18 @@ def db_init(db: Session = Depends(get_db)):
                 email="admin@solact.in",
                 name="Solact Founder",
                 password_hash=get_password_hash("Password123!"),
-                role="owner",
+                role="admin",
                 is_active=True,
                 is_verified=True,
             )
             db.add(user)
             db.commit()
-            return {"status": "ok", "message": "Tables created and admin user seeded successfully!"}
-        return {"status": "ok", "message": "Tables exist and admin user is present!"}
+            return {"status": "ok", "message": "Tables created and admin user seeded with role='admin'!"}
+        else:
+            if user.role != "admin":
+                user.role = "admin"
+                db.commit()
+        return {"status": "ok", "message": "Tables exist and admin user is verified with role='admin'!"}
     except Exception as e:
         import traceback
         return {"status": "error", "error": str(e), "trace": traceback.format_exc()}
